@@ -1,16 +1,11 @@
 <script>
 	import { onMount } from 'svelte';
 	import { days, months, DT } from "./dt.js";
-	import { lightOrDark, shadeColor } from "./helpers.js";
 
-	export let accent = "#38A169";	// Accent color for the calendar (header and selects)
 	//export let dateFormat = "Y-m-d";
 	//export let timeFormat = "H:i";
 	export let value = "";
 	
-	let accentLight = "";			// Calculated accent color (~30% lighter than regular accent)
-	let accentLightTextColor = "";	// Text color used for the lighter accent
-	let accentTextColor = "";		// Text color to use where accent is used
 	let active = new DT;			// Active month tracker
 	let calendarDays = [];			// Track the days to actual display
 	let selected = new DT;			// Setup the selected date to the current date
@@ -19,9 +14,6 @@
 	$: prev = active.prev();
 	$: next = active.next();
 	$: value = selected.getDate();
-	$: accentLight = shadeColor(accent, 70);
-	$: accentLightTextColor = lightOrDark(accentLight, "#FFF", "#000");
-	$: accentTextColor = lightOrDark(accent, "#FFF", "#000");
 
 	// Rebuild our list of days whenever the active month changes
 	$: {
@@ -33,6 +25,9 @@
 
 			// Loop through each day in the week
 			for (let j = 0; j < 7; j++) {
+				let dDay = 0;
+				let dMonth = 0;
+				let dYear = 0;
 				let classes = ["sdt-day"];
 				let dateValue = date;
 				let dateString = "";
@@ -41,19 +36,27 @@
 				if (i === 0 && j < active.monthStartDate()) {
 					classes.push("sdt-prev-month")
 					dateValue = prev.daysInMonth() - (active.monthStartDate() - j - 1);
-					dateString = `${prev.getMonth()}/${dateValue}/${prev.getYear()}`;
+					dDay = dateValue;
+					dMonth = prev.getMonth();
+					dYear = prev.getYear();
 				}
 				else if (date > active.daysInMonth()) {
 					classes.push("sdt-next-month");
 					dateValue = date - active.daysInMonth();
-					dateString = `${prev.getMonth()}/${dateValue}/${prev.getYear()}`;
+					dDay = dateValue;
+					dMonth = next.getMonth();
+					dYear = next.getYear();
+					dateString = `${next.getYear()}-${next.getMonth()}-${dateValue}`;
 					date++;
 				}
 				else {
-					classes.push("sdt-curr-month");
-					dateString = `${active.getMonth()}/${dateValue}/${active.getYear()}`;
+					dDay = dateValue;
+					dMonth = active.getMonth();
+					dYear = active.getYear();
 					date++;
 				}
+
+				dateString = `${dYear}-${dMonth.toString().padStart(2, '0')}-${dDay.toString().padStart(2, '0')}`;
 
 				if (today === dateString) {
 					classes.push("sdt-today");
@@ -73,7 +76,7 @@
 	onMount(() => {
 		let t = new Date;
 		selected = new DT(value);
-		today = `${t.getMonth() + 1}/${t.getDate()}/${t.getFullYear()}`;
+		today = `${t.getFullYear()}-${(t.getMonth() + 1).toString().padStart(2, '0')}-${t.getDate().toString().padStart(2, '0')}`;
 	});
 
 	function prevClicked() {
@@ -85,9 +88,44 @@
 	}
 
 	function dayClicked(e) {
-		selected = new DT(e.target.value);
+		selected = new DT(e.target.value + "T00:00");
 	}
 </script>
+
+<div class="sdt-calendar">
+	<header class="sdt-header">
+		<div class="sdt-month-year">
+			<span class="sdt-month">{ active.currentMonth() }</span>
+			<span class="sdt-year">{ active.currentYear() }</span>
+		</div>
+
+		<a href="javascript:void(0)" class="sdt-prev-item" on:click={prevClicked}>Prev</a>
+		<a href="javascript:void(0)" class="sdt-next-item" on:click={nextClicked}>Next</a>
+	</header>
+	<div class="sdt-month">
+		<header>
+			{#each days as day}
+			<span>{ day[1] }</span>
+			{/each}
+		</header>
+		<div class="sdt-days">
+			{#each calendarDays as day}
+			<span class={ day.c} >
+				{#if day.s }
+				<button class={ day.c } type="button"
+					value={ day.v }
+					on:click={dayClicked}
+				>
+					{ day.d }
+				</button>
+				{:else}
+				<span>{ day.d }</span>
+				{/if}
+			</span>
+			{/each}
+		</div>
+	</div>
+</div>
 
 <style>
 	.sdt-calendar {
@@ -95,14 +133,25 @@
 		border: 1px solid lightgrey;
 	}
 
-	header {
+	.sdt-header {
 		display: flex;
 		padding: 0.25rem 0.5rem;
 	}
 
-	header div {
+	.sdt-header > div {
 		flex-grow: 1;
+	}
+
+	.sdt-month header {
+		display: block;
+	}
+
+	.sdt-month > header > span,
+	.sdt-month > div > span {
+		display: inline-block;
+		font-weight: bold;
 		text-align: center;
+		width: 14.2857143%;
 	}
 
 	button {
@@ -115,51 +164,11 @@
 		line-height: 0;
 	}
 
-	button:not(.sdt-curr-month) { color: lightgrey; }
+	button.sdt-prev-month, button.sdt-next-month {
+		color: lightgrey;
+	}
 
 	button:hover, button:active {
 		border: 1px solid lightgrey;
 	}
 </style>
-
-<div class="sdt-calendar">
-	<header style="background-color: { accent }; color: { accentTextColor };">
-		<a href="javascript:void(0)" class="sdt-prev-item" style="color: {accentTextColor}" on:click={prevClicked}>Prev</a>
-		<div class="sdt-month-year">
-			<span class="sdt-month">{ active.currentMonth() }</span>
-			<span class="sdt-year">{ active.currentYear() }</span>
-		</div>
-		<a href="javascript:void(0)" class="sdt-next-item" style="color: {accentTextColor}" on:click={nextClicked}>Next</a>
-	</header>
-	<table>
-		<thead>
-			{#each days as day}
-			<th>{ day[1] }</th>
-			{/each}
-		</thead>
-
-		<tbody>
-			{#each Array(6) as _, i}
-			<tr>
-				{#each Array(7) as _, d}
-				<td>
-					{#if calendarDays[(i * 7) + d].s }
-					<button 
-						class={ calendarDays[(i * 7) + d].c }
-						style={ calendarDays[(i * 7) + d].t ? `background-color: ${accentLight}; color: ${accentLightTextColor};` : `` }
-						type="button"
-						value={ calendarDays[(i * 7) + d].v }
-						on:click={dayClicked}
-					>
-						{ calendarDays[(i * 7) + d].d }
-					</button>
-					{:else}
-					<span>{ calendarDays[(i * 7) + d].d }</span>
-					{/if}
-				</td>
-				{/each}
-			</tr>
-			{/each}
-		</tbody>
-	</table>
-</div>

@@ -55,3 +55,4 @@ export function shadeColor(hex, percent) {
 
 	return rgbToHex(color);
 }
+
