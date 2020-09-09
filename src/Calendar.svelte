@@ -4,7 +4,7 @@
 
 	//export let dateFormat = "Y-m-d";
 	//export let timeFormat = "H:i";
-	export let value = "";
+	export let value = new DT;
 	
 	let active = new DT;			// Active month tracker
 	let calendarDays = [];			// Track the days to actual display
@@ -13,7 +13,7 @@
 
 	$: prev = active.prev();
 	$: next = active.next();
-	$: value = selected.getDate();
+	$: value = selected;
 
 	// Rebuild our list of days whenever the active month changes
 	$: {
@@ -38,21 +38,21 @@
 					dateValue = prev.daysInMonth() - (active.monthStartDate() - j - 1);
 					dDay = dateValue;
 					dMonth = prev.getMonth();
-					dYear = prev.getYear();
+					dYear = prev.getYearFull();
 				}
 				else if (date > active.daysInMonth()) {
 					classes.push("sdt-next-month");
 					dateValue = date - active.daysInMonth();
 					dDay = dateValue;
 					dMonth = next.getMonth();
-					dYear = next.getYear();
-					dateString = `${next.getYear()}-${next.getMonth()}-${dateValue}`;
+					dYear = next.getYearFull();
+					dateString = `${next.getYearFull()}-${next.getMonth()}-${dateValue}`;
 					date++;
 				}
 				else {
 					dDay = dateValue;
 					dMonth = active.getMonth();
-					dYear = active.getYear();
+					dYear = active.getYearFull();
 					date++;
 				}
 
@@ -94,13 +94,14 @@
 
 <div class="sdt-calendar">
 	<header class="sdt-header">
+		<a href="javascript:void(0)" class="sdt-prev-item" on:click={prevClicked}><span></span></a>
+
 		<div class="sdt-month-year">
 			<span class="sdt-month">{ active.currentMonth() }</span>
 			<span class="sdt-year">{ active.currentYear() }</span>
 		</div>
 
-		<a href="javascript:void(0)" class="sdt-prev-item" on:click={prevClicked}>Prev</a>
-		<a href="javascript:void(0)" class="sdt-next-item" on:click={nextClicked}>Next</a>
+		<a href="javascript:void(0)" class="sdt-next-item" on:click={nextClicked}><span></span></a>
 	</header>
 	<div class="sdt-month">
 		<header>
@@ -110,12 +111,9 @@
 		</header>
 		<div class="sdt-days">
 			{#each calendarDays as day}
-			<span class={ day.c} >
+			<span class={ day.c }>
 				{#if day.s }
-				<button class={ day.c } type="button"
-					value={ day.v }
-					on:click={dayClicked}
-				>
+				<button class={ day.c } type="button" value={ day.v } on:click={ dayClicked }>
 					{ day.d }
 				</button>
 				{:else}
@@ -135,6 +133,7 @@
 
 	.sdt-header {
 		display: flex;
+		font-size: 1.5rem;
 		padding: 0.25rem 0.5rem;
 	}
 
@@ -144,6 +143,11 @@
 
 	.sdt-month header {
 		display: block;
+		padding: 0.5rem 0;
+	}
+
+	.sdt-month-year {
+		text-align: center;
 	}
 
 	.sdt-month > header > span,
@@ -154,9 +158,26 @@
 		width: 14.2857143%;
 	}
 
+	.sdt-prev-item span:before {
+		content: "\002190";
+		display: block;
+		padding: 0 0.25rem;
+	}
+
+	.sdt-next-item span:before {
+		content: "\002192";
+		display: block;
+		padding: 0 0.25rem;
+	}
+
+	a, button {
+		cursor: pointer;
+		transition: all 0.3s ease-in-out;
+	}
+
 	button {
 		background: 0;
-		border: 0;
+		border: 0 transparent;
 		border-radius: 150px;
 		width: 2rem;
 		max-width: 2rem;
@@ -168,7 +189,9 @@
 		color: lightgrey;
 	}
 
-	button:hover, button:active {
+	button:hover, button:active, .sdt-today button {
 		border: 1px solid lightgrey;
 	}
+
+	header { background-color: #EFEFEF; }
 </style>

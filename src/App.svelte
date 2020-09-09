@@ -1,5 +1,6 @@
 <script>
-	import Calendar from './Calendar.svelte'
+	import Calendar from './Calendar.svelte';
+	import { formatDate } from './dt.js';
 	
 	let accent = "#4c51bf";
 	let date = "01/01/2020";
@@ -17,7 +18,7 @@
 		<Calendar accent={accent} bind:value={date}></Calendar>
 
 		<br /><br />
-		Selected Date: { date }
+		Selected Date: { formatDate(date, "YYYY-MM-DD") }
 	</div>
 </main>
 

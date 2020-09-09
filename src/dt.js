@@ -1,3 +1,5 @@
+import { dataset_dev } from "svelte/internal";
+
 export let days = (() => {
 	let output = [];
 	let date = new Date("01/01/2017");
@@ -27,6 +29,49 @@ export let months = (() => {
 
 	return output;
 })();
+
+export function parseDate(date, format) {
+	if (typeof date === "object" && date.__proto__.constructor.name === "DT") {
+		return date;
+	}
+	else if (typeof date === "object" && date.__proto__.constructor.name == "Date") {
+		return new DT(date);
+	}
+
+	return null;
+};
+
+export function formatDate(date, format) {
+	date = parseDate(date);
+	if (!date) {
+		return "";
+	}
+
+	if (typeof format !== "string") {
+		format = "c";
+	}
+
+	const replace = {
+		'MMMM': date.currentMonth(),
+		'MMM': date.currentMonth(true),
+		'MM': date.getMonth().toString().padStart(2, '0'),
+		'M': date.getMonth(),
+		'DDDD': date.getDayOfMonth().toString().padStart(3, '0'),
+		'DDD': date.getDayOfMonth(),
+		'DD': date.getDayOfMonth().toString().padStart(2, '0'),
+		'D': date.getDayOfMonth(),
+		'YYYY': date.getYearFull(),
+		'YY': date.getYear()
+	};
+
+	for (const key in replace) {
+		const value = replace[key];
+		const regex = new RegExp(key, 'g');
+		format = format.replace(regex, value);
+	}
+
+	return format;
+};
 
 /**
  * A basic DateTime library
@@ -81,7 +126,7 @@ export class DT {
 	}
 
 	format(format) {
-		return "";
+		return formatDate(this, format);
 	}
 
 	getDate() {
@@ -101,6 +146,10 @@ export class DT {
 	}
 
 	getYear() {
+		return this.date.getYear();
+	}
+
+	getYearFull() {
 		return this.date.getFullYear();
 	}
 
